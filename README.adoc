@@ -1,7 +1,7 @@
-= Hibernate standalone test app
+= Hibernate standalone app to save a simple marker data as database table
 
 Hibernate standalone test application using Hibernate api to generate database schema
-and then persist and query an item.
+and then persist and query records.
 
 == How to run
 
@@ -17,10 +17,12 @@ docker run -p 5432:5432 --rm  -ePOSTGRES_USER=test -e POSTGRES_PASSWORD=test pos
 == Run the app
 
 If your database is running at different machine than at `localhost:5432` or with different credentials than `test/test`
-then consider to make changes in `src/main/resources/persistence.xml`.
+then consider to make changes in `setup.properties` file.
+
 
 ```bash
 mvn clean package
-java -cp target/hibernate-standalone-1.0-SNAPSHOT-jar-with-dependencies.jar:./postgresql-42.2.2.jar:. cz.chalda.Main
+java -Dproperties.file=./setup.properties -cp target/txn-recovery-marker-jdbc-1.0-SNAPSHOT-jar-with-dependencies.jar:<path>/postgresql-42.2.2.jar org.jboss.openshift.Main create nameapp namerecovery
+java -Dproperties.file=./setup.properties -cp target/txn-recovery-marker-jdbc-1.0-SNAPSHOT-jar-with-dependencies.jar:<path>/postgresql-42.2.2.jar org.jboss.openshift.Main get_all_recovery
 ```
-java -agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y -Dproperties.file=./setup.properties -Ddb.table.name=ttt -cp /home/ochaloup/conn/postgresql-42.2.2.jar:target/txn-recovery-marker-jdbc-1.0-SNAPSHOT-jar-with-dependencies.jar org.jboss.openshift.Main
+NOTE: for debugging enhance `java` command with `-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y`
