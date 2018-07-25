@@ -1,4 +1,4 @@
-package org.jboss.openshift;
+package org.jboss.openshift.txrecovery;
 
 import java.io.Serializable;
 

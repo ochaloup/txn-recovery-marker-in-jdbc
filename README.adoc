@@ -1,4 +1,4 @@
-= Hibernate standalone app to save a simple marker data as database table
+= Hibernate standalone app to save a simple marker data to the database table
 
 Hibernate standalone test application using Hibernate api to generate database schema
 and then persist and query records.
@@ -22,7 +22,7 @@ then consider to make changes in `setup.properties` file.
 
 ```bash
 mvn clean package
-java -Dproperties.file=./setup.properties -cp target/txn-recovery-marker-jdbc-1.0-SNAPSHOT-jar-with-dependencies.jar:<path>/postgresql-42.2.2.jar org.jboss.openshift.Main create nameapp namerecovery
-java -Dproperties.file=./setup.properties -cp target/txn-recovery-marker-jdbc-1.0-SNAPSHOT-jar-with-dependencies.jar:<path>/postgresql-42.2.2.jar org.jboss.openshift.Main get_all_recovery
+java -Dproperties.file=./setup.properties -cp target/txn-recovery-marker-jdbc-1.0-SNAPSHOT-jar-with-dependencies.jar:<path>/postgresql-42.2.2.jar org.jboss.openshift.txrecovery.Main create nameapp namerecovery
+java -Dproperties.file=./setup.properties -cp target/txn-recovery-marker-jdbc-1.0-SNAPSHOT-jar-with-dependencies.jar:<path>/postgresql-42.2.2.jar org.jboss.openshift.txrecovery.Main get_all_recovery
 ```
 NOTE: for debugging enhance `java` command with `-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y`

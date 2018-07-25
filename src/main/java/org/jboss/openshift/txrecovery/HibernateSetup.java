@@ -21,7 +21,7 @@
  */
 
 
-package org.jboss.openshift;
+package org.jboss.openshift.txrecovery;
 
 import java.io.File;
 import java.io.FileInputStream;

@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.openshift;
+package org.jboss.openshift.txrecovery;
 
 import java.util.Arrays;
 import java.util.Collection;
