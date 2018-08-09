@@ -22,9 +22,8 @@
 
 package org.jboss.openshift.txrecovery.cliargs;
 
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
+import java.text.MessageFormat;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -33,22 +32,26 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 
 public final class ArgumentParser {
+    public static final String DEFAULT_TABLE_NAME = "JDBC_RECOVERY";
+
     private static Options ARGS_OPTIONS = new Options()
         .addOption("y", "type_db", true, "Database type the script will be working with")
-        .addOption("o"," host", true, "Hostname where the database runs")
-        .addOption("p"," port", true, "Port where the database runs")
-        .addRequiredOption("d"," database", true, "Databese name to connect to at the host and port")
-        .addRequiredOption("u"," user", true, "Username at the database to connect to")
-        .addRequiredOption("s"," password", true, "Password for the username at the database to connect to")
+        .addOption("i", "hibernate_dialect", true, "Hibernate dialect to be used")
+        .addOption("j", "jdbc_driver_class", true, "fully classified JDBC Driver class")
+        .addOption("o","host", true, "Hostname where the database runs")
+        .addOption("p","port", true, "Port where the database runs")
+        .addRequiredOption("d","database", true, "Databese name to connect to at the host and port")
+        .addRequiredOption("u","user", true, "Username at the database to connect to")
+        .addRequiredOption("s","password", true, "Password for the username at the database to connect to")
         .addOption("t","table_name", true, "Table name to be working with")
         .addOption("c","command", true, "Command to run in database available options are to create db schema"
             + "to insert a record to delete the record and list recovery pod names")
-        .addOption("a"," application_pod_name", true, "Application pod name which will be either"
+        .addOption("a","application_pod_name", true, "Application pod name which will be either"
             + " inserted/deleted onto database or by which query will be filtered")
-        .addOption("r"," recovery_pod_name", true, "Recovery pod name which"
+        .addOption("r","recovery_pod_name", true, "Recovery pod name which"
             +  " will be either inserted/deleted onto database or by which query will be filtered")
-        .addOption("f"," format", true, "Output format")
-        .addOption("d"," debug", false, "Enable verbose logging");
+        .addOption("f","format", true, "Output format")
+        .addOption("v","verbose", false, "Enable verbose logging");
 
     /**
      * Use the static method for getting instance of parsed arguments.
@@ -60,13 +63,14 @@ public final class ArgumentParser {
         return new ArgumentParser(args);
     }
 
-    DatabaseType typeDb;
-    String host, database, user, password, tableName;
-    Integer port;
-    CommandType command;
-    String applicationPodName, recoveryPodName;
-    OutputFormatType format;
-    boolean isDebug;
+    private DatabaseType typeDb;
+    private String hibernateDialect, jdbcDriverClass;
+    private String host, database, user, password, tableName;
+    private Integer port;
+    private CommandType command;
+    private String applicationPodName, recoveryPodName;
+    private OutputFormatType format;
+    private boolean isVerbose;
 
     private ArgumentParser(String args[]) {
         CommandLineParser parser = new DefaultParser();
@@ -76,25 +80,27 @@ public final class ArgumentParser {
 
             String value = line.getOptionValue("type_db", DatabaseType.POSTGRESQL.name());
             this.typeDb = DatabaseType.valueOf(value.toUpperCase());
+            this.hibernateDialect = line.getOptionValue("hibernate_dialect", typeDb.dialect());
+            this.jdbcDriverClass = line.getOptionValue("jdbc_driver_class", typeDb.jdbcDriverClasss());
 
             this.host = line.getOptionValue("host", "localhost");
             value = line.getOptionValue("port", "5432");
-            this.port = Integer.getInteger(value);
+            this.port = Integer.valueOf(value);
             this.database = line.getOptionValue("database");
             this.user = line.getOptionValue("user");
             this.password = line.getOptionValue("password");
-            this.tableName = line.getOptionValue("table_name", "JDBC_RECOVERY");
+            this.tableName = line.getOptionValue("table_name", DEFAULT_TABLE_NAME);
 
             value = line.getOptionValue("command", CommandType.SELECT_RECOVERY.name());
-            this.command = CommandType.valueOf(value);
+            this.command = CommandType.valueOf(value.toUpperCase());
 
             this.applicationPodName = line.getOptionValue("application_pod_name");
             this.recoveryPodName = line.getOptionValue("recovery_pod_name");
 
             value = line.getOptionValue("format", OutputFormatType.LIST_SPACE.name());
-            this.format = OutputFormatType.valueOf(value);
+            this.format = OutputFormatType.valueOf(value.toUpperCase());
 
-            this.isDebug = line.hasOption("debug");
+            this.isVerbose = line.hasOption("verbose");
         } catch(Exception pe) {
             System.err.println(pe.getMessage());
 
@@ -112,6 +118,10 @@ public final class ArgumentParser {
 
     public DatabaseType getTypeDb() {
         return typeDb;
+    }
+    
+    public String getHibernateDialect() {
+        return hibernateDialect;
     }
 
     public String getHost() {
@@ -154,7 +164,15 @@ public final class ArgumentParser {
         return format;
     }
 
-    public boolean isDebug() {
-        return isDebug;
+    public boolean isVerbose() {
+        return isVerbose;
+    }
+
+    public String getJdbcDriverClass() {
+        return jdbcDriverClass;
+    }
+
+    public String getJdbcUrl() {
+        return MessageFormat.format(typeDb.jdbcUrlPattern(), host, port.intValue(), database);
     }
 }

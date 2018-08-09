@@ -23,12 +23,9 @@
 
 package org.jboss.openshift.txrecovery;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.hibernate.Session;
 import org.hibernate.boot.Metadata;
@@ -36,16 +33,16 @@ import org.hibernate.boot.MetadataBuilder;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.model.naming.Identifier;
 import org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl;
+import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
 import org.hibernate.service.ServiceRegistry;
+import org.jboss.openshift.txrecovery.cliargs.ArgumentParser;
 
 /**
  * Utility methods to setup hibernate standalone app.
  */
 public final class HibernateSetup {
-    private static final Logger log = Logger.getLogger(HibernateSetup.class.getName());
-
     private HibernateSetup() {
         // utility class
     }
@@ -59,60 +56,68 @@ public final class HibernateSetup {
     public static final String HIBERNATE_CONNECTION_PASSWORD_PARAM = "hibernate.connection.password";
 
     /**
-     * Boot-up the app by gathering properties needed for Hibernate start-up.
+     * <p>
+     * Boot-up the app by gathering properties needed for Hibernate start-up.<br>
+     * Method searches for values and then create the hibernate setup based on it.
+     * <p>
+     * It uses {@link ArgumentParser} to get values for the properties
+     * and it uses system properties and env properties as another source
+     * to setup values.
      *
+     * @param arguments  values to  be used as the most important for the setup
      * @return  properties for hibernate being able to connect to db
      */
-    public static Properties getConfigurationProperties() {
-        Properties outputProperties = new Properties();
+    public static Properties getConfigurationProperties(ArgumentParser args) {
+        Properties outputProperties = getConfigurationProperties();
 
-        // loading properties from properties file if specified
-        if(getProperty(PROPERTIES_FILE_PARAM) != null) {
-            File propFile = new File(getProperty(PROPERTIES_FILE_PARAM));
-            if(!propFile.exists()) throw new IllegalArgumentException("Argument " + PROPERTIES_FILE_PARAM
-                    + " does not point to and existing file but defines it as " + getProperty(PROPERTIES_FILE_PARAM));
-
-            FileInputStream inputStreamProperties = null;
-            try {
-                inputStreamProperties = new FileInputStream(propFile);
-                outputProperties.load(inputStreamProperties);
-            } catch (Exception e) {
-                throw new IllegalStateException("Cannot load properties from file " + propFile, e);
-            } finally {
-                try {
-                    if(inputStreamProperties != null) inputStreamProperties.close();
-                } catch (Exception e) {
-                    log.log(Level.FINE, "Cannot close input stream of file " + propFile, e);
-                }
-            }
-        }
-
-        // taking properties from env and system properties
-        setProperty(outputProperties, HIBERNATE_DIALECT_PARAM);
-        setProperty(outputProperties, HIBERNATE_CONNECTION_DRIVER_CLASS_PARAM);
-        setProperty(outputProperties, HIBERNATE_CONNECTION_URL_PARAM);
-        setProperty(outputProperties, HIBERNATE_CONNECTION_USERNAME_PARAM);
-        setProperty(outputProperties, HIBERNATE_CONNECTION_PASSWORD_PARAM);
-        setProperty(outputProperties, DB_TABLE_NAME_PARAM);
-
+        setIfNotNull(HIBERNATE_DIALECT_PARAM, args.getHibernateDialect(), outputProperties);
+        setIfNotNull(HIBERNATE_DIALECT_PARAM, args.getHibernateDialect(), outputProperties);
+        setIfNotNull(HIBERNATE_CONNECTION_DRIVER_CLASS_PARAM, args.getJdbcDriverClass(), outputProperties);
+        setIfNotNull(HIBERNATE_CONNECTION_URL_PARAM, args.getJdbcUrl(), outputProperties);
+        setIfNotNull(HIBERNATE_CONNECTION_USERNAME_PARAM, args.getUser(), outputProperties);
+        setIfNotNull(HIBERNATE_CONNECTION_PASSWORD_PARAM, args.getPassword(), outputProperties);
+        setIfNotNull(DB_TABLE_NAME_PARAM, args.getTableName(), outputProperties);
         return outputProperties;
     }
 
+    /**
+     * Loading hibernate setup data only from environmental and system properties.
+     *
+     * See the #getConfigurationProperties(ArgumentParser)
+     */
+    public static Properties getConfigurationProperties() {
+        Properties outputProperties = new Properties();
+        getAndWriteProperty(HIBERNATE_DIALECT_PARAM, outputProperties);
+        getAndWriteProperty(HIBERNATE_CONNECTION_DRIVER_CLASS_PARAM, outputProperties);
+        getAndWriteProperty(HIBERNATE_CONNECTION_URL_PARAM, outputProperties);
+        getAndWriteProperty(HIBERNATE_CONNECTION_USERNAME_PARAM, outputProperties);
+        getAndWriteProperty(HIBERNATE_CONNECTION_PASSWORD_PARAM, outputProperties);
+        getAndWriteProperty(DB_TABLE_NAME_PARAM, outputProperties);
+        return outputProperties;
+    }
+
+    /**
+     * Generate hibernate registry while filling it with properties.
+     *
+     * @param setupProperties  properties for connection
+     * @return hibernate standard registry
+     */
+    @SuppressWarnings("rawtypes")
+    public static StandardServiceRegistry getStandardRegistry(Properties setupProperties) {
+        StandardServiceRegistryBuilder standardRegistryBuilder = new StandardServiceRegistryBuilder();
+        standardRegistryBuilder.applySettings((Map) setupProperties);
+        return standardRegistryBuilder.build();
+    }
     /**
      * Setting up the Hibernate as standalone app. It uses  the {@link Metadata} filled from provided properties.
      *
      * @param setupProperties properties, probably taken from {@link #getConfigurationProperties()}
      * @return hibernate metadata to be used for {@link Session} creation
      */
-    @SuppressWarnings("rawtypes")
-    public static Metadata getHibernateStartupMetadata(Properties setupProperties) {
-        StandardServiceRegistryBuilder standardRegistryBuilder = new StandardServiceRegistryBuilder();
-        standardRegistryBuilder.applySettings((Map) setupProperties);
-
+    public static Metadata getHibernateStartupMetadata(Properties setupProperties, final ServiceRegistry standardRegistry) {
         // loading name of table that will be used for saving data, in null then value is not used
         final String tableName = setupProperties.getProperty(DB_TABLE_NAME_PARAM);
 
-        final ServiceRegistry standardRegistry = standardRegistryBuilder.build();
         MetadataSources sources = new MetadataSources(standardRegistry)
                 .addAnnotatedClass(ApplicationRecoveryPodDto.class);
         MetadataBuilder metadataBuilder = sources.getMetadataBuilder();
@@ -120,12 +125,11 @@ public final class HibernateSetup {
             private static final long serialVersionUID = 1L;
             @Override
             public Identifier toPhysicalTableName(Identifier name, JdbcEnvironment jdbcEnvironment) {
-                if(name.getCanonicalName().equalsIgnoreCase(ApplicationRecoveryPodDto.TABLE_NAME) && tableName != null)
+                if(name.getCanonicalName().equalsIgnoreCase(ApplicationRecoveryPodDto.TABLE_NAME) && tableName != null && !tableName.isEmpty())
                     return Identifier.toIdentifier(tableName);
                 return name;
             }
         });
-
         return metadataBuilder.build();
     }
 
@@ -141,18 +145,33 @@ public final class HibernateSetup {
         return appRecoveryPodTableName;
     }
 
-    private static String getProperty(String key) {
+    /**
+     * Search of environment properties and system properties for the {@code key}.
+     *
+     * @param key  name of property which will be search for
+     * @return  value belonging to the property
+     */
+    private static Optional<String> getProperty(String key) {
         if(key == null) throw new NullPointerException("key");
         String property = System.getProperty(key);
         if(property == null) property = System.getenv(key);
         if(property == null) property = System.getProperty(key.toLowerCase().replaceAll("_", "."));
         if(property == null) property = System.getenv(key.toUpperCase().replaceAll("[.]", "_"));
-        return property;
+        return Optional.ofNullable(property);
     }
-    
-    private static Properties setProperty(Properties props, String key) {
-        String value = getProperty(key);
-        if(value != null) props.setProperty(key, value);
-        return props;
+
+    /**
+     * Get property value and if it's found it's written to the outputProperties
+     */
+    private static Optional<String> getAndWriteProperty(String key, final Properties propertiesToWriteIn) {
+        Optional<String> value = getProperty(key);
+        if(value.isPresent()) propertiesToWriteIn.setProperty(key, value.get());
+        return value;
+    }
+
+    private static Properties setIfNotNull(String key, String value, final Properties propertiesToChange) {
+        if(key != null && value != null && !key.isEmpty() && !value.isEmpty())
+            propertiesToChange.setProperty(key, value);
+        return propertiesToChange;
     }
 }

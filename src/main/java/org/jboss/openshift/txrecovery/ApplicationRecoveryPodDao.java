@@ -29,6 +29,8 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.hibernate.Criteria;
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.jdbc.ReturningWork;
@@ -69,34 +71,25 @@ public class ApplicationRecoveryPodDao {
         return true;
     }
 
-    /**
-     * To delete all records which links the app pod name.
-     *
-     * @param applicationPodName  app pod name for records to be deleted
-     * @return true if deleted, false otherwise
-     */
-    public boolean deleteRecordsByApplicationPodname(String applicationPodName) {
-        Collection<ApplicationRecoveryPodDto> recordDtos = getRecordsByAppPod(applicationPodName);
-        boolean result = true;
-        for(ApplicationRecoveryPodDto recordDto: recordDtos) {
-            if(!deleteRecord(recordDto)) result = false;
+    public int delete(String applicationPodName, String recoveryPodName) {
+        String whereClause = "";
+        if(applicationPodName != null && !applicationPodName.isEmpty()) {
+            whereClause += " where id.applicationPodName = :appPod";
         }
-        return result;
-    }
+        if(recoveryPodName != null && !recoveryPodName.isEmpty()) {
+            whereClause = whereClause.isEmpty() ? " where " : " and ";
+            whereClause += "id.recoveryPodName = :recPod";
+        }
+            
+        // creating hql delete query 
+        Query q = session.createQuery("delete from ApplicationRecoveryPodDto" + whereClause);
 
-    /**
-     * To delete all records which links the recovery pod name.
-     *
-     * @param recoveryPodName  recovery pod name for records to be deleted
-     * @return true if deleted, false otherwise
-     */
-    public boolean deleteRecordsByRecoveryPodname(String recoveryPodName) {
-        Collection<ApplicationRecoveryPodDto> recordDtos = getRecordsByRecoveryPod(recoveryPodName);
-        boolean result = true;
-        for(ApplicationRecoveryPodDto recordDto: recordDtos) {
-            if(!deleteRecord(recordDto)) result = false;
-        }
-        return result;
+        if(applicationPodName != null && !applicationPodName.isEmpty())
+            q.setString("appPod", applicationPodName);
+        if(recoveryPodName != null && !recoveryPodName.isEmpty())
+            q.setString("recPod", recoveryPodName);
+
+        return q.executeUpdate();
     }
 
     /**
@@ -157,54 +150,22 @@ public class ApplicationRecoveryPodDao {
     }
 
     /**
-     * To get a record.
-     *
-     * @param applicationPodName  record will be searched with app pod name of this parameter
-     * @param recoveryPodName  record will be searched with recovery pod name of this parameter
-     * @return the record or null
-     */
-    public ApplicationRecoveryPodDto getRecord(String applicationPodName, String recoveryPodName) {
-        // the Criteria is deprecated in Hibernate 5.2 (see https://github.com/treehouse/giflib-hibernate/commit/f97a2828a466e849d8ae84884b5dce60a66cf412)
-        return (ApplicationRecoveryPodDto) session.createCriteria(ApplicationRecoveryPodDto.class)
-                .add(Restrictions.eq("id.applicationPodName", applicationPodName))
-                .add(Restrictions.eq("id.recoveryPodName", recoveryPodName))
-                .uniqueResult();
-    }
-
-    /**
-     * To get all recovery marker records.
-     *
-     * @return the records or null
-     */
-    @SuppressWarnings("unchecked")
-    public Collection<ApplicationRecoveryPodDto> getAllRecords() {
-        return session.createCriteria(ApplicationRecoveryPodDto.class).list();
-    }
-
-    /**
-     * To get records that contains specified app pod name.
+     * To get records that contains specified app pod name or recovery pod name.
      *
      * @param applicationPodName  app pod name to filter recovery markers by
+     * @param recoveryPodName  rec pod name to filter recovery markers by
      * @return the records or null
      */
     @SuppressWarnings("unchecked")
-    public Collection<ApplicationRecoveryPodDto> getRecordsByAppPod(String applicationPodName) {
-        return session.createCriteria(ApplicationRecoveryPodDto.class)
-          .add(Restrictions.eq("id.applicationPodName", applicationPodName))
-          .list();
+    public Collection<ApplicationRecoveryPodDto> getRecords(String applicationPodName, String recoveryPodName) {
+        // the Criteria is deprecated in Hibernate 5.2 (see https://github.com/treehouse/giflib-hibernate/commit/f97a2828a466e849d8ae84884b5dce60a66cf412)
+        Criteria criteria = session.createCriteria(ApplicationRecoveryPodDto.class);
+        if(applicationPodName != null && !applicationPodName.isEmpty()) {
+            criteria.add(Restrictions.eq("id.applicationPodName", applicationPodName));
+        }
+        if(recoveryPodName != null && !recoveryPodName.isEmpty()) {
+            criteria.add(Restrictions.eq("id.recoveryPodName", recoveryPodName));
+        }
+        return criteria.list();
     }
-    
-    /**
-     * To get records that contains specified recovery pod name.
-     *
-     * @param recoveryPodName  recovery pod name to filter recovery markers by
-     * @return the records or null
-     */
-    @SuppressWarnings("unchecked")
-    public Collection<ApplicationRecoveryPodDto> getRecordsByRecoveryPod(String recoveryPodName) {
-        return session.createCriteria(ApplicationRecoveryPodDto.class)
-            .add(Restrictions.eq("id.recoveryPodName", recoveryPodName))
-            .list();
-    }
-
 }

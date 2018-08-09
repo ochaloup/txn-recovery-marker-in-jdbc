@@ -23,6 +23,39 @@
 package org.jboss.openshift.txrecovery.cliargs;
 
 public enum DatabaseType {
-    POSTGRESQL,
-    MYSQL
+    POSTGRESQL(
+        "org.postgresql.Driver",
+        "org.hibernate.dialect.PostgreSQL94Dialect",
+        "jdbc:postgresql://{0}:{1,number,#}/{2}"),
+
+    MYSQL(
+        "com.mysql.jdbc.Driver",
+        "org.hibernate.dialect.MySQL5InnoDBDialect",
+        "jdbc:mysql://{0}:{1,number,#}/{2}");
+
+
+    private String jdbcUrlPattern;
+    private String dialect, jdbcDriverClass;
+
+    private DatabaseType(String driverClass, String dialect, String jdbcUrlPattern) {
+        this.jdbcDriverClass = driverClass;
+        this.dialect = dialect;
+        this.jdbcUrlPattern = jdbcUrlPattern;
+    }
+
+    public String dialect() {
+        return dialect;
+    }
+
+    public String jdbcDriverClasss() {
+        return jdbcDriverClass;
+    }
+
+    /**
+     * Format to take is:<br>
+     * <code>MessageFormat.format(DatabaseType.jdbcUrlPattern(), host, port, dbName)</code>
+     */
+    public String jdbcUrlPattern() {
+        return jdbcUrlPattern;
+    }
 }
