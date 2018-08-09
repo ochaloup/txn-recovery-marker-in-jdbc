@@ -20,27 +20,12 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.openshift.txrecovery;
+package org.jboss.openshift.txrecovery.cliargs;
 
-/**
- * Program arguments supported by the main class.
- */
-public enum ArgsOptions {
-    CREATE("create"),
-    GET("get"),
-    GET_BY_APPLICATION_POD("get_by_application"),
-    GET_ALL_RECOVERY_PODS("get_all_recovery"),
-    DELETE("delete"),
-    DELETE_BY_APPLICATION_POD("delete_by_application"),
-    DELETE_BY_RECOVERY_POD("delete_by_recovery");
-
-    private String option;
-    
-    private ArgsOptions(String option) {
-        this.option = option;
-    }
-
-    public String getOption() {
-        return option;
-    }
+public enum CommandType {
+    CREATE,
+    INSERT,
+    DELETE,
+    SELECT_RECOVERY,
+    SELECT_APPLICATION
 }

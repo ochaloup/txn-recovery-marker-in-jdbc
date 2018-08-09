@@ -22,8 +22,6 @@
 
 package org.jboss.openshift.txrecovery;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -34,6 +32,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.boot.Metadata;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.schema.TargetType;
+import org.jboss.openshift.txrecovery.cliargs.ArgumentParser;
 
 /**
  * Class processing the arguments and calling service to save, delete data in database.
@@ -43,8 +42,7 @@ public class Main {
 
 
     public static void main( String[] args ) {
-        if(args.length < 1) throw new IllegalArgumentException("No argument specified. "
-            + "Expecting at least action to do from list: " + Arrays.asList(ArgsOptions.values()));
+        ArgumentParser parsedArguments = ArgumentParser.parse(args);
 
         // Hibernate setup
         Properties setupProperties = HibernateSetup.getConfigurationProperties();
@@ -56,22 +54,27 @@ public class Main {
         // Gathering table name of dto we use for saving the recovery marker 
         String appRecoveryPodTableName = HibernateSetup.getTableName(setupProperties);
 
-        // What is the action to process
-        String action = args[0];
-
+        switch(parsedArguments.getCommand()) {
+            case CREATE:
+                System.out.println("Ahoj");
+                break;
+            default: 
+                System.out.println("heyhou");
+        }
+/*
         try {
 
             // create
-            if(action.equals(ArgsOptions.CREATE.getOption())) {
-                checkArg(ArgsOptions.CREATE, args, 3, "application and recovery pod names");
+            if(action.equals(ArgumentParser.CREATE.getOption())) {
+                checkArg(ArgumentParser.CREATE, args, 3, "application and recovery pod names");
                 if(!dtoService.tableExists(appRecoveryPodTableName)) createTable(metadata);
                 if(!dtoService.saveRecord(args[1], args[2])) {
                     System.exit(1);
                 }
 
             // delete
-            } else if(action.equals(ArgsOptions.DELETE.getOption())) {
-                checkArg(ArgsOptions.DELETE, args, 3, "application and recovery pod names to delete the marker for");
+            } else if(action.equals(ArgumentParser.DELETE.getOption())) {
+                checkArg(ArgumentParser.DELETE, args, 3, "application and recovery pod names to delete the marker for");
                 ApplicationRecoveryPodDto dto = dtoService.getRecord(args[1], args[2]);
                 if(!dtoService.deleteRecord(dto)) {
                     log.info("Cannot delete record based on application '" + args[1] + "' and recovery '" + args[2] + "'. Possibly any such record found.");
@@ -79,25 +82,25 @@ public class Main {
                 }
 
             // delete_by_application
-            } else if(action.equals(ArgsOptions.DELETE_BY_APPLICATION_POD.getOption())) {
-                checkArg(ArgsOptions.DELETE_BY_APPLICATION_POD, args, 2, "application pod name to delete the marker for");
+            } else if(action.equals(ArgumentParser.DELETE_BY_APPLICATION_POD.getOption())) {
+                checkArg(ArgumentParser.DELETE_BY_APPLICATION_POD, args, 2, "application pod name to delete the marker for");
                 if(!dtoService.deleteRecordsByApplicationPodname(args[1])) {
                     log.info("Cannot delete all records based on application pod name '" + args[1] + "'. Possibly any such record found.");
                     System.exit(1);
                 }
 
             // delete_by_recovery
-            } else if(action.equals(ArgsOptions.DELETE_BY_RECOVERY_POD.getOption())) {
-                checkArg(ArgsOptions.DELETE_BY_RECOVERY_POD, args, 2, "recovery pod name to delete the marker for");
+            } else if(action.equals(ArgumentParser.DELETE_BY_RECOVERY_POD.getOption())) {
+                checkArg(ArgumentParser.DELETE_BY_RECOVERY_POD, args, 2, "recovery pod name to delete the marker for");
                 if(!dtoService.deleteRecordsByRecoveryPodname(args[1])) {
                     log.info("Cannot delete all records based on recovery pod name '" + args[1] + "'. Possibly any such record found.");
                     System.exit(1);
                 }
 
             // get
-            } else if(action.equals(ArgsOptions.GET.getOption())) {
+            } else if(action.equals(ArgumentParser.GET.getOption())) {
                 try {
-                    checkArg(ArgsOptions.GET, args, 3, "application and recovery pod name as keys to find");
+                    checkArg(ArgumentParser.GET, args, 3, "application and recovery pod name as keys to find");
                     ApplicationRecoveryPodDto dto = dtoService.getRecord(args[1], args[2]);
                     if(dto == null) System.exit(1); // no record found
                     System.out.println(dto.getApplicationPodName() + " " + dto.getRecoveryPodName());
@@ -108,9 +111,9 @@ public class Main {
                 }
 
             // get_by_application
-            } else if(action.equals(ArgsOptions.GET_BY_APPLICATION_POD.getOption())) {
+            } else if(action.equals(ArgumentParser.GET_BY_APPLICATION_POD.getOption())) {
                 try {
-                    checkArg(ArgsOptions.GET_BY_APPLICATION_POD, args, 2, "application pod name as keys to find");
+                    checkArg(ArgumentParser.GET_BY_APPLICATION_POD, args, 2, "application pod name as keys to find");
                     Collection<ApplicationRecoveryPodDto> dtos = dtoService.getRecordsByAppPod(args[1]);
                     if(dtos == null || dtos.isEmpty()) System.exit(1); // no record found
                     StringBuffer recoveryPodsListing = new StringBuffer();
@@ -125,7 +128,7 @@ public class Main {
                 }
 
             // get_all_recovery
-            } else if(action.equals(ArgsOptions.GET_ALL_RECOVERY_PODS.getOption())) {
+            } else if(action.equals(ArgumentParser.GET_ALL_RECOVERY_PODS.getOption())) {
                 try {
                     Collection<ApplicationRecoveryPodDto> dtos = dtoService.getAllRecords();
                     StringBuffer recoveryPodsListing = new StringBuffer();
@@ -140,19 +143,12 @@ public class Main {
                 }
             } else {
                 throw new IllegalArgumentException("Action '" + args[0] + "' is not expected for the tool which expects" +
-                    " an action name from list: " + Arrays.asList(ArgsOptions.values()));
+                    " an action name from list: " + Arrays.asList(ArgumentParser.values()));
             }
         } finally {
             close(sessionFactory, session);
         }
-    }
-
-
-    private static void checkArg(ArgsOptions artOpt, String[] args, int expectedNumberOfArguments, String additionalMsg) {
-        if(args.length != expectedNumberOfArguments) {
-            throw new IllegalArgumentException("Action '" + artOpt.getOption() +
-                "' expects " + (expectedNumberOfArguments - 1) + " more argument, " + additionalMsg);
-        }
+        */
     }
 
     private static boolean createTable(Metadata metadata) {
