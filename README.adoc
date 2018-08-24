@@ -3,6 +3,8 @@
 Hibernate standalone test application using Hibernate api to generate database schema
 and then persist and query records.
 
+WARNING: *TODO* not up-to-date. Need changes!
+
 == How to run
 
 == Getting run a database

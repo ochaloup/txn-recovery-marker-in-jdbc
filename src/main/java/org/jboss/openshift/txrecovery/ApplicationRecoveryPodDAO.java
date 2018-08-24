@@ -37,14 +37,14 @@ import org.hibernate.jdbc.ReturningWork;
 import org.hibernate.resource.transaction.spi.TransactionStatus;
 
 /**
- * Data manipulation service working with the {@link ApplicationRecoveryPodDto}.
+ * Data manipulation service working with the {@link ApplicationRecoveryPod}.
  */
-public class ApplicationRecoveryPodDao {
-    private static final Logger log = Logger.getLogger(ApplicationRecoveryPodDao.class.getName());
+public class ApplicationRecoveryPodDAO {
+    private static final Logger log = Logger.getLogger(ApplicationRecoveryPodDAO.class.getName());
 
     private Session session;
 
-    public ApplicationRecoveryPodDao(Session session) {
+    public ApplicationRecoveryPodDAO(Session session) {
         this.session = session;
     }
 
@@ -57,7 +57,7 @@ public class ApplicationRecoveryPodDao {
      */
     public boolean saveRecord(String applicationPodName, String recoveryPodName) {
         session.getTransaction().begin();
-        ApplicationRecoveryPodDto record = new ApplicationRecoveryPodDto(
+        ApplicationRecoveryPod record = new ApplicationRecoveryPod(
                 applicationPodName, recoveryPodName);
         try {
             session.persist(record);
@@ -80,8 +80,8 @@ public class ApplicationRecoveryPodDao {
             whereClause = whereClause.isEmpty() ? " where " : " and ";
             whereClause += "id.recoveryPodName = :recPod";
         }
-            
-        // creating hql delete query 
+
+        // creating hql delete query
         Query q = session.createQuery("delete from ApplicationRecoveryPodDto" + whereClause);
 
         if(applicationPodName != null && !applicationPodName.isEmpty())
@@ -98,7 +98,7 @@ public class ApplicationRecoveryPodDao {
      * @param recordDto  dto to be deleted
      * @return true if deleted, false otherwise
      */
-    public boolean deleteRecord(ApplicationRecoveryPodDto recordDto) {
+    public boolean deleteRecord(ApplicationRecoveryPod recordDto) {
         if(recordDto == null) return false;
 
         session.getTransaction().begin();
@@ -157,9 +157,9 @@ public class ApplicationRecoveryPodDao {
      * @return the records or null
      */
     @SuppressWarnings("unchecked")
-    public Collection<ApplicationRecoveryPodDto> getRecords(String applicationPodName, String recoveryPodName) {
+    public Collection<ApplicationRecoveryPod> getRecords(String applicationPodName, String recoveryPodName) {
         // the Criteria is deprecated in Hibernate 5.2 (see https://github.com/treehouse/giflib-hibernate/commit/f97a2828a466e849d8ae84884b5dce60a66cf412)
-        Criteria criteria = session.createCriteria(ApplicationRecoveryPodDto.class);
+        Criteria criteria = session.createCriteria(ApplicationRecoveryPod.class);
         if(applicationPodName != null && !applicationPodName.isEmpty()) {
             criteria.add(Restrictions.eq("id.applicationPodName", applicationPodName));
         }

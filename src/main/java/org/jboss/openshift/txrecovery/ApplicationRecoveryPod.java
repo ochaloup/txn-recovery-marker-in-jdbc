@@ -12,27 +12,27 @@ import javax.persistence.Table;
  * the corresponding recovery pod name which the recovery pod works at.
  */
 @Entity
-@Table(name = ApplicationRecoveryPodDto.TABLE_NAME)
-public class ApplicationRecoveryPodDto {
+@Table(name = ApplicationRecoveryPod.TABLE_NAME)
+public class ApplicationRecoveryPod {
     public static final String TABLE_NAME = "RECOVERY_MARKER";
 
     @EmbeddedId private RecoveryInProgressRecordId id;
 
-    public ApplicationRecoveryPodDto() {
+    public ApplicationRecoveryPod() {
         // constructor needed by Hibernate
     }
 
-    public ApplicationRecoveryPodDto(String applicationPodName, String recoveryPodName) {
+    public ApplicationRecoveryPod(String applicationPodName, String recoveryPodName) {
         this.id = new RecoveryInProgressRecordId();
         id.applicationPodName = applicationPodName;
         id.recoveryPodName = recoveryPodName;
     }
 
-    ApplicationRecoveryPodDto setApplicationPodName(String applicationPodName) {
+    ApplicationRecoveryPod setApplicationPodName(String applicationPodName) {
         this.id.applicationPodName = applicationPodName;
         return this;
     }
-    ApplicationRecoveryPodDto setRecoveryPodName(String recoveryPodName) {
+    ApplicationRecoveryPod setRecoveryPodName(String recoveryPodName) {
         this.id.recoveryPodName = recoveryPodName;
         return this;
     }

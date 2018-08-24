@@ -119,13 +119,13 @@ public final class HibernateSetup {
         final String tableName = setupProperties.getProperty(DB_TABLE_NAME_PARAM);
 
         MetadataSources sources = new MetadataSources(standardRegistry)
-                .addAnnotatedClass(ApplicationRecoveryPodDto.class);
+                .addAnnotatedClass(ApplicationRecoveryPod.class);
         MetadataBuilder metadataBuilder = sources.getMetadataBuilder();
         metadataBuilder.applyPhysicalNamingStrategy(new PhysicalNamingStrategyStandardImpl() {
             private static final long serialVersionUID = 1L;
             @Override
             public Identifier toPhysicalTableName(Identifier name, JdbcEnvironment jdbcEnvironment) {
-                if(name.getCanonicalName().equalsIgnoreCase(ApplicationRecoveryPodDto.TABLE_NAME) && tableName != null && !tableName.isEmpty())
+                if(name.getCanonicalName().equalsIgnoreCase(ApplicationRecoveryPod.TABLE_NAME) && tableName != null && !tableName.isEmpty())
                     return Identifier.toIdentifier(tableName);
                 return name;
             }
@@ -135,13 +135,13 @@ public final class HibernateSetup {
 
     /**
      * Returning current table name being used in the app for saving the recovery markers.
-     * 
+     *
      * @param setupProperties  properties to search for the db table name
      * @return name of table used in app
      */
     public static String getTableName(Properties setupProperties) {
         String appRecoveryPodTableName = setupProperties.getProperty(DB_TABLE_NAME_PARAM);
-        if(appRecoveryPodTableName == null) appRecoveryPodTableName = ApplicationRecoveryPodDto.TABLE_NAME;
+        if(appRecoveryPodTableName == null) appRecoveryPodTableName = ApplicationRecoveryPod.TABLE_NAME;
         return appRecoveryPodTableName;
     }
 

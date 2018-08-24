@@ -1,4 +1,8 @@
+target/
+
+# eclipse metadata
 .classpath
 .project
 .settings/
-target/
+.checkstyle
+

@@ -59,7 +59,7 @@ public final class ArgumentParser {
      * @param args  cli arguments
      * @return parser with getters containing the parsed values
      */
-    public static ArgumentParser parse(String args[]) {
+    public static ArgumentParser parse(String... args) {
         return new ArgumentParser(args);
     }
 
@@ -72,7 +72,7 @@ public final class ArgumentParser {
     private OutputFormatType format;
     private boolean isVerbose;
 
-    private ArgumentParser(String args[]) {
+    private ArgumentParser(String... args) {
         CommandLineParser parser = new DefaultParser();
 
         try {
@@ -119,7 +119,7 @@ public final class ArgumentParser {
     public DatabaseType getTypeDb() {
         return typeDb;
     }
-    
+
     public String getHibernateDialect() {
         return hibernateDialect;
     }

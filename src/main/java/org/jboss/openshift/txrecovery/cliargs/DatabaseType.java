@@ -31,7 +31,13 @@ public enum DatabaseType {
     MYSQL(
         "com.mysql.jdbc.Driver",
         "org.hibernate.dialect.MySQL5InnoDBDialect",
+        "jdbc:mysql://{0}:{1,number,#}/{2}"),
+
+    H2(
+        "org.h2.Driver",
+        "org.hibernate.dialect.H2Dialect",
         "jdbc:mysql://{0}:{1,number,#}/{2}");
+
 
 
     private String jdbcUrlPattern;

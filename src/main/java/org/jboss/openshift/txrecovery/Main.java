@@ -57,9 +57,9 @@ public class Main {
         Metadata metadata = HibernateSetup.getHibernateStartupMetadata(setupProperties, standardRegistry);
         SessionFactory sessionFactory = metadata.buildSessionFactory();
         Session session = sessionFactory.openSession();
-        ApplicationRecoveryPodDao dtoService = new ApplicationRecoveryPodDao(session);
+        ApplicationRecoveryPodDAO dtoService = new ApplicationRecoveryPodDAO(session);
 
-        // Gathering table name of dto we use for saving the recovery marker 
+        // Gathering table name of dto we use for saving the recovery marker
         String appRecoveryPodTableName = HibernateSetup.getTableName(setupProperties);
 
         List<String> outputListing = new ArrayList<String>();
@@ -95,8 +95,8 @@ public class Main {
                 case SELECT_RECOVERY:
                     appPod = parsedArguments.getApplicationPodName();
                     recPod = parsedArguments.getRecoveryPodName();
-                    Collection<ApplicationRecoveryPodDto> dtos = dtoService.getRecords(appPod, recPod);
-                    for(ApplicationRecoveryPodDto dto: dtos) {
+                    Collection<ApplicationRecoveryPod> dtos = dtoService.getRecords(appPod, recPod);
+                    for(ApplicationRecoveryPod dto: dtos) {
                         if(parsedArguments.getCommand() == CommandType.SELECT_APPLICATION)
                             outputListing.add(dto.getApplicationPodName());
                         if(parsedArguments.getCommand() == CommandType.SELECT_RECOVERY)
