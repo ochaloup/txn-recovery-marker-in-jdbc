@@ -25,25 +25,142 @@ package org.jboss.openshift.txrecovery;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Checks for database connections and operations.
  */
 public class MainTest {
-    private static final List<String> H2_ARGS = Arrays.asList(ArgumentParserTest.H2_CONNECTION_ARGS);
+    private static final Logger log = Logger.getLogger(MainTest.class.getName());
+
+    private DBH2Connector h2Connector = new DBH2Connector();
+
+    @Before
+    public void setUp() {
+        try {
+            h2Connector.dropTable();
+        } catch (Exception ignore) {
+            log.log(Level.FINE, "Error on dropping h2 testing table", ignore);
+        }
+    }
 
     @Test
     public void createTable() {
-        List<String> args = new ArrayList<String>(H2_ARGS);
-        args.add("-c");
-        args.add("create");
+        String[] args = enrichArray(ArgumentParserTest.H2_CONNECTION_ARGS, "-c", "create");
 
-        Main.main(args.toArray(new String[] {}));
-        DBH2Connector h2Connector = new DBH2Connector();
+        Main.main(args);
 
         // we are fine that call passes without exception
-        h2Connector.selectAll();
+        String out = h2Connector.selectAll();
+        Assert.assertTrue("Expecting no data was inserted", out.isEmpty());
+    }
+
+    @Test
+    public void insertAppPod() {
+        String[] args = enrichArray(ArgumentParserTest.H2_CONNECTION_ARGS,
+            "-c", "insert", "-a", "goodone", "-r", "badone");
+
+        Main.main(args);
+
+        String out = h2Connector.selectAll();
+        log.info("Selected data is: '" + out + "'");
+        Assert.assertTrue("Expecting the -a value was added to database", out.contains("good"));
+        Assert.assertTrue("Expecting the -r value was added to database", out.contains("bad"));
+        Assert.assertEquals("Expecting only one row was added into the database", 1, out.split(";").length);
+    }
+
+    @Test
+    public void deleteApplicationPod() {
+        String[] argsInsert = enrichArray(ArgumentParserTest.H2_CONNECTION_ARGS,
+                "-c", "insert", "-a", "goodone", "-r", "badone");
+        Main.main(argsInsert);
+
+        String out = h2Connector.selectAll();
+        Assert.assertEquals("Expecting one row was added into the database", 1, out.split(";").length);
+
+        String[] argsDelete = enrichArray(ArgumentParserTest.H2_CONNECTION_ARGS,
+                "-c", "delete", "-a", "goodone");
+        Main.main(argsDelete);
+
+        out = h2Connector.selectAll();
+        Assert.assertTrue("Expecting data whic were inserted were removed", out.isEmpty());
+    }
+
+    @Test
+    public void deleteRecoveryPod() {
+        String[] argsInsert = enrichArray(ArgumentParserTest.H2_CONNECTION_ARGS,
+                "-c", "insert", "-a", "goodone", "-r", "badone");
+        Main.main(argsInsert);
+
+        String out = h2Connector.selectAll();
+        Assert.assertEquals("Expecting one row was added into the database", 1, out.split(";").length);
+
+        String[] argsDelete = enrichArray(ArgumentParserTest.H2_CONNECTION_ARGS,
+                "-c", "delete", "-r", "badone");
+        Main.main(argsDelete);
+
+        out = h2Connector.selectAll();
+        Assert.assertTrue("Expecting data whic were inserted were removed", out.isEmpty());
+    }
+
+    @Test
+    public void selectRecovery() throws Exception {
+        String[] argsInsert = enrichArray(ArgumentParserTest.H2_CONNECTION_ARGS,
+                "-c", "insert", "-a", "goodone", "-r", "badone");
+        Main.main(argsInsert);
+
+        // a little bit hacking for reading system out
+        java.io.ByteArrayOutputStream systemOut = new java.io.ByteArrayOutputStream();
+        System.setOut(new java.io.PrintStream(systemOut));
+        String[] argsSelectByApplicationPod = enrichArray(ArgumentParserTest.H2_CONNECTION_ARGS,
+                "-c", "select_recovery", "-a", "goodone");
+        Main.main(argsSelectByApplicationPod);
+        Assert.assertFalse("Select should not print name of app pod", systemOut.toString().contains("goodone"));
+        Assert.assertTrue("Select should print name of rec pod",systemOut.toString().contains("badone"));
+
+        systemOut = new java.io.ByteArrayOutputStream();
+        System.setOut(new java.io.PrintStream(systemOut));
+        String[] argsSelectByRecoveryPod = enrichArray(ArgumentParserTest.H2_CONNECTION_ARGS,
+                "-c", "select_recovery", "-r", "badone");
+        Main.main(argsSelectByRecoveryPod);
+        Assert.assertFalse("Select should not print name of app pod", systemOut.toString().contains("goodone"));
+        Assert.assertTrue("Select should print name of rec pod", systemOut.toString().contains("badone"));
+    }
+
+    @Test
+    public void selectApplication() throws Exception {
+        String[] argsInsert = enrichArray(ArgumentParserTest.H2_CONNECTION_ARGS,
+                "-c", "insert", "-a", "goodone", "-r", "badone");
+        Main.main(argsInsert);
+
+        // a little bit hacking for reading system out
+        java.io.ByteArrayOutputStream systemOut = new java.io.ByteArrayOutputStream();
+        System.setOut(new java.io.PrintStream(systemOut));
+        String[] argsSelectByApplicationPod = enrichArray(ArgumentParserTest.H2_CONNECTION_ARGS,
+                "-c", "select_application", "-a", "goodone");
+        Main.main(argsSelectByApplicationPod);
+        Assert.assertTrue("Select should print name of app pod", systemOut.toString().contains("goodone"));
+        Assert.assertFalse("Select should not print name of rec pod", systemOut.toString().contains("badone"));
+
+        systemOut = new java.io.ByteArrayOutputStream();
+        System.setOut(new java.io.PrintStream(systemOut));
+        String[] argsSelectByRecoveryPod = enrichArray(ArgumentParserTest.H2_CONNECTION_ARGS,
+                "-c", "select_application", "-r", "badone");
+        Main.main(argsSelectByRecoveryPod);
+        Assert.assertTrue("Select should print name of app pod", systemOut.toString().contains("goodone"));
+        Assert.assertFalse("Select should not print name of rec pod", systemOut.toString().contains("badone"));
+    }
+
+    private String[] enrichArray(String[] baseArray, String... argumentsToAdd) {
+        List<String> args = new ArrayList<String>(Arrays.asList(baseArray));
+        for(String str: argumentsToAdd) {
+            args.add(str);
+        }
+        return args.toArray(new String[] {});
     }
 }

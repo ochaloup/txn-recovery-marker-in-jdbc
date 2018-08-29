@@ -73,4 +73,20 @@ public class DBH2Connector {
             }
         }
     }
+
+    public void dropTable() {
+        Connection conn = null;
+        try {
+            conn = this.ds.getConnection();
+            conn.createStatement().executeUpdate("DROP TABLE " + DB_TABLE_NAME);
+        } catch (SQLException sqle) {
+            throw new IllegalStateException("Cannot drop table " + DB_TABLE_NAME + " from ds '" + ds + "'", sqle);
+        } finally {
+            try {
+                conn.close();
+            } catch (Exception e) {
+                log.log(Level.SEVERE, "Cannot select data from ds '" + ds + "'", e);
+            }
+        }
+    }
 }

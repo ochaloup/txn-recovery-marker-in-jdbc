@@ -38,8 +38,8 @@ public class ArgumentParserTest {
     public static final String[] H2_CONNECTION_ARGS = new String[] {
         "-y", "h2",
         "-l", DBH2Connector.DB_H2_CONNECTION,
-        "-u", "test",
-        "-s", "test",
+        "-u", "",
+        "-s", "",
         "-t", DBH2Connector.DB_TABLE_NAME};
 
     @Test
@@ -151,11 +151,11 @@ public class ArgumentParserTest {
         Assert.assertEquals(DatabaseType.H2, ap.getTypeDb());
         Assert.assertEquals("org.hibernate.dialect.H2Dialect", ap.getHibernateDialect());
         Assert.assertEquals("org.h2.Driver", ap.getJdbcDriverClass());
-        Assert.assertEquals("jdbc:h2:mem:test", ap.getJdbcUrl());
+        Assert.assertEquals(DBH2Connector.DB_H2_CONNECTION, ap.getJdbcUrl());
         Assert.assertEquals("localhost", ap.getHost());
         Assert.assertEquals((Integer) 5432, ap.getPort());
-        Assert.assertEquals("test", ap.getUser());
-        Assert.assertEquals("test", ap.getPassword());
+        Assert.assertEquals("", ap.getUser());
+        Assert.assertEquals("", ap.getPassword());
+        Assert.assertEquals(DBH2Connector.DB_TABLE_NAME, ap.getTableName());
     }
-
 }

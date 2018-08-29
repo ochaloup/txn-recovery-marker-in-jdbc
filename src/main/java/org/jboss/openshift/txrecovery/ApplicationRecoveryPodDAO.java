@@ -82,7 +82,7 @@ public class ApplicationRecoveryPodDAO {
         }
 
         // creating hql delete query
-        Query q = session.createQuery("delete from ApplicationRecoveryPodDto" + whereClause);
+        Query q = session.createQuery("delete from " + ApplicationRecoveryPod.class.getSimpleName() + whereClause);
 
         if(applicationPodName != null && !applicationPodName.isEmpty())
             q.setString("appPod", applicationPodName);
