@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module xmlns="urn:jboss:module:1.5" name="app">
+<module xmlns="urn:jboss:module:1.5" name="io.narayana.openshift-recovery">
     <main-class name="org.jboss.openshift.txrecovery.Main"/>
     <resources>
-        <resource-root path="tx-recovery-marker-jdbc.jar"/>
+        <resource-root path="txn-recovery-marker-jdbc.jar"/>
     </resources>
     <dependencies>
         <module name="org.hibernate"/>
+        <module name="org.postgresql"/>
+        <module name="com.mysql"/>
     </dependencies>
 </module>

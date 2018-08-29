@@ -28,3 +28,4 @@ java -Dproperties.file=./setup.properties -cp target/txn-recovery-marker-jdbc-1.
 java -Dproperties.file=./setup.properties -cp target/txn-recovery-marker-jdbc-1.0-SNAPSHOT-jar-with-dependencies.jar:<path>/postgresql-42.2.2.jar org.jboss.openshift.txrecovery.Main get_all_recovery
 ```
 NOTE: for debugging enhance `java` command with `-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y`
+java -jar /home/ochaloup/jboss/wildfly/dist/target/wildfly-14.0.0.CR1-SNAPSHOT/jboss-modules.jar -mp /home/ochaloup/jboss/wildfly/dist/target/wildfly-14.0.0.CR1-SNAPSHOT/modules/ io.narayana.openshift-recovery -o localhost -p 5432 -d test -u test -s test -t myone -c insert -a ahoj -r franta

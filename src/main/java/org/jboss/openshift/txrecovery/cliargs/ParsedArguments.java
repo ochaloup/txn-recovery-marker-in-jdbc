@@ -42,7 +42,7 @@ public final class ParsedArguments {
         .addOption("l", "url", true,"JDBC url which has precedence over configured host/port/database information")
         .addOption("o","host", true, "Hostname where the database runs")
         .addOption("p","port", true, "Port where the database runs")
-        .addOption("d","database", true, "Databese name to connect to at the host and port")
+        .addOption("d","database", true, "Database name to connect to at the host and port")
         .addRequiredOption("u","user", true, "Username at the database to connect to")
         .addRequiredOption("s","password", true, "Password for the username at the database to connect to")
         .addOption("t","table_name", true, "Table name to be working with")
@@ -52,8 +52,9 @@ public final class ParsedArguments {
             + " inserted/deleted onto database or by which query will be filtered")
         .addOption("r","recovery_pod_name", true, "Recovery pod name which"
             +  " will be either inserted/deleted onto database or by which query will be filtered")
-        .addOption("f","format", true, "Output format")
-        .addOption("v","verbose", false, "Enable verbose logging");
+        .addOption("f", "format", true, "Output format")
+        .addOption("v", "verbose", false, "Enable verbose logging")
+        .addOption("h", "help", false, "Printing this help");
 
     /**
      * Use the static method for getting instance of parsed arguments.
@@ -81,6 +82,11 @@ public final class ParsedArguments {
 
         try {
             parser.parse(ARGS_OPTIONS, args);
+
+            if(parser.hasOption("help")) {
+                printHelpStdErr();
+                System.exit(2);
+            }
 
             String value = parser.getOptionValue("type_db", DEFAULT_DB_TYPE);
             this.typeDb = DatabaseType.valueOf(value.toUpperCase());
@@ -114,11 +120,14 @@ public final class ParsedArguments {
             this.isVerbose = parser.hasOption("verbose");
         } catch(Exception pe) {
             System.err.println(pe.getMessage());
-
-            System.err.println("txn-recovery-marker-jdbc: creating and storing transaction recovery markers in database. Available command line arguments are:");
-            ARGS_OPTIONS.printHelpToStdErr();
+            printHelpStdErr();
             throw new ArgumentParserException(pe);
         }
+    }
+
+    void printHelpStdErr() {
+        System.err.println("txn-recovery-marker-jdbc: creating and storing transaction recovery markers in database. Available command line arguments are:");
+        ARGS_OPTIONS.printHelpToStdErr();
     }
 
     public static Options getARGS_OPTIONS() {
