@@ -22,11 +22,11 @@
 
 package org.jboss.openshift.txrecovery;
 
-import org.jboss.openshift.txrecovery.cliargs.ArgumentParser;
+import org.jboss.openshift.txrecovery.cliargs.ParsedArguments;
+import org.jboss.openshift.txrecovery.types.CommandType;
+import org.jboss.openshift.txrecovery.types.DatabaseType;
+import org.jboss.openshift.txrecovery.types.OutputFormatType;
 import org.jboss.openshift.txrecovery.cliargs.ArgumentParserException;
-import org.jboss.openshift.txrecovery.cliargs.CommandType;
-import org.jboss.openshift.txrecovery.cliargs.DatabaseType;
-import org.jboss.openshift.txrecovery.cliargs.OutputFormatType;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -60,7 +60,7 @@ public class ArgumentParserTest {
             "-r", "name_of_recovery_pod",
             "-f", "raw",
             "-v"};
-        ArgumentParser ap = ArgumentParser.parse(args);
+        ParsedArguments ap = ParsedArguments.parse(args);
 
         Assert.assertEquals(DatabaseType.H2, ap.getTypeDb());
         Assert.assertEquals("org.hibernate.dialect.H2Dialect", ap.getHibernateDialect());
@@ -96,7 +96,7 @@ public class ArgumentParserTest {
             "--recovery_pod_name", "name_of_recovery_pod",
             "--format", "raw",
             "--verbose"};
-        ArgumentParser ap = ArgumentParser.parse(args);
+        ParsedArguments ap = ParsedArguments.parse(args);
 
         Assert.assertEquals(DatabaseType.H2, ap.getTypeDb());
         Assert.assertEquals("org.hibernate.dialect.H2Dialect", ap.getHibernateDialect());
@@ -123,7 +123,7 @@ public class ArgumentParserTest {
             "-u", "test_user",
             "-s", "test_password"};
         try {
-            ArgumentParser.parse(args);
+            ParsedArguments.parse(args);
         } catch (ArgumentParserException ape) {
             if(!(ape.getCause() instanceof IllegalArgumentException)) {
                 throw ape;
@@ -139,14 +139,14 @@ public class ArgumentParserTest {
             "-u", "test_user",
             "-s", "test_password",
             "-d", "test_dbname"};
-        ArgumentParser ap = ArgumentParser.parse(args);
+        ParsedArguments ap = ParsedArguments.parse(args);
 
         Assert.assertEquals("my_db", ap.getDatabase());
     }
 
     @Test
     public void h2Settings() throws Exception {
-        ArgumentParser ap = ArgumentParser.parse(H2_CONNECTION_ARGS);
+        ParsedArguments ap = ParsedArguments.parse(H2_CONNECTION_ARGS);
 
         Assert.assertEquals(DatabaseType.H2, ap.getTypeDb());
         Assert.assertEquals("org.hibernate.dialect.H2Dialect", ap.getHibernateDialect());

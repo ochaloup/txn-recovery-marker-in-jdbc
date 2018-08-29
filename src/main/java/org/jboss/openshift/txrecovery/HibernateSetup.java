@@ -43,7 +43,7 @@ import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.schema.TargetType;
-import org.jboss.openshift.txrecovery.cliargs.ArgumentParser;
+import org.jboss.openshift.txrecovery.cliargs.ParsedArguments;
 
 /**
  * Utility methods to setup hibernate standalone app.
@@ -67,14 +67,14 @@ public final class HibernateSetup {
      * Boot-up the app by gathering properties needed for Hibernate start-up.<br>
      * Method searches for values and then create the hibernate setup based on it.
      * <p>
-     * It uses {@link ArgumentParser} to get values for the properties
+     * It uses {@link ParsedArguments} to get values for the properties
      * and it uses system properties and env properties as another source
      * to setup values.
      *
      * @param arguments  values to  be used as the most important for the setup
      * @return  properties for hibernate being able to connect to db
      */
-    public static Properties getConfigurationProperties(ArgumentParser args) {
+    public static Properties getConfigurationProperties(ParsedArguments args) {
         Properties outputProperties = getConfigurationProperties();
 
         setIfNotNull(HIBERNATE_DIALECT_PARAM, args.getHibernateDialect(), outputProperties);

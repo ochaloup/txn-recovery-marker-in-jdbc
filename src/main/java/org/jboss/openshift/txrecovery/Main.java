@@ -36,10 +36,10 @@ import org.hibernate.SessionFactory;
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.service.ServiceRegistry;
-import org.jboss.openshift.txrecovery.cliargs.ArgumentParser;
+import org.jboss.openshift.txrecovery.cliargs.ParsedArguments;
+import org.jboss.openshift.txrecovery.types.CommandType;
+import org.jboss.openshift.txrecovery.types.OutputFormatType;
 import org.jboss.openshift.txrecovery.cliargs.ArgumentParserException;
-import org.jboss.openshift.txrecovery.cliargs.CommandType;
-import org.jboss.openshift.txrecovery.cliargs.OutputFormatType;
 
 /**
  * Class processing the arguments and calling service to save, delete data in database.
@@ -49,9 +49,9 @@ public class Main {
 
 
     public static void main(String[] args) {
-        ArgumentParser parsedArguments = null;
+        ParsedArguments parsedArguments = null;
         try {
-            parsedArguments = ArgumentParser.parse(args);
+            parsedArguments = ParsedArguments.parse(args);
         } catch (ArgumentParserException ape) {
             log.log(Level.FINE, "Error on parsing arguments: " + Arrays.asList(args), ape);
             System.exit(1);
@@ -81,7 +81,7 @@ public class Main {
         printToStandardOutput(outputListing, parsedArguments.getFormat());
     }
 
-    private static List<String> processDatabaseUpdate(ArgumentParser parsedArguments, String tableName, Session session, Metadata metadata) {
+    private static List<String> processDatabaseUpdate(ParsedArguments parsedArguments, String tableName, Session session, Metadata metadata) {
         List<String> outputListing = new ArrayList<String>();
         ApplicationRecoveryPodDAO dtoService = new ApplicationRecoveryPodDAO(session);
 

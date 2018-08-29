@@ -22,172 +22,69 @@
 
 package org.jboss.openshift.txrecovery.cliargs;
 
-import java.io.PrintWriter;
-import java.text.MessageFormat;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
+/**
+ * Parses arguments from command line and joining the knowledge
+ * with the permitted options.
+ */
+class ArgumentParser {
+    private Set<Options.OptionsData> optionsDeclared = new HashSet<Options.OptionsData>();
 
-public final class ArgumentParser {
-    public static final String DEFAULT_TABLE_NAME = "JDBC_RECOVERY";
-    public static final String DEFAULT_DB_TYPE = DatabaseType.POSTGRESQL.name();
-    public static final String DEFAULT_HOST = "localhost";
-    public static final String DEFAULT_PORT = "5432"; // PostgreSQL
-    public static final String DEFAULT_COMMAND = CommandType.SELECT_RECOVERY.name();
-
-    private static Options ARGS_OPTIONS = new Options()
-        .addOption("y", "type_db", true, "Database type the script will be working with")
-        .addOption("i", "hibernate_dialect", true, "Hibernate dialect to be used")
-        .addOption("j", "jdbc_driver_class", true, "fully classified JDBC Driver class")
-        .addOption("l", "url", true,"JDBC url which has precedence over configured host/port/database information")
-        .addOption("o","host", true, "Hostname where the database runs")
-        .addOption("p","port", true, "Port where the database runs")
-        .addOption("d","database", true, "Databese name to connect to at the host and port")
-        .addRequiredOption("u","user", true, "Username at the database to connect to")
-        .addRequiredOption("s","password", true, "Password for the username at the database to connect to")
-        .addOption("t","table_name", true, "Table name to be working with")
-        .addOption("c","command", true, "Command to run in database available options are to create db schema"
-            + "to insert a record to delete the record and list recovery pod names")
-        .addOption("a","application_pod_name", true, "Application pod name which will be either"
-            + " inserted/deleted onto database or by which query will be filtered")
-        .addOption("r","recovery_pod_name", true, "Recovery pod name which"
-            +  " will be either inserted/deleted onto database or by which query will be filtered")
-        .addOption("f","format", true, "Output format")
-        .addOption("v","verbose", false, "Enable verbose logging");
-
-    /**
-     * Use the static method for getting instance of parsed arguments.
-     *
-     * @param args  cli arguments
-     * @return parser with getters containing the parsed values
-     * @throws ArgumentParserException  error happens during error parsing
-     */
-    public static ArgumentParser parse(String... args) throws ArgumentParserException {
-        return new ArgumentParser(args);
+    ArgumentParser() {
+        // package private
     }
 
-    private DatabaseType typeDb;
-    private String hibernateDialect, jdbcDriverClass;
-    private String jdbcUrl;
-    private String host, database, user, password, tableName;
-    private Integer port;
-    private CommandType command;
-    private String applicationPodName, recoveryPodName;
-    private OutputFormatType format;
-    private boolean isVerbose;
+    void parse(Options options, String[] args) throws ArgumentParserException {
+        if(options == null) throw new NullPointerException("options");
+        if(args == null) return;
 
-    private ArgumentParser(String... args) throws ArgumentParserException {
-        CommandLineParser parser = new DefaultParser();
-
-        try {
-            CommandLine line = parser.parse(ARGS_OPTIONS, args);
-
-            String value = line.getOptionValue("type_db", DEFAULT_DB_TYPE);
-            this.typeDb = DatabaseType.valueOf(value.toUpperCase());
-            this.hibernateDialect = line.getOptionValue("hibernate_dialect", typeDb.dialect());
-            this.jdbcDriverClass = line.getOptionValue("jdbc_driver_class", typeDb.jdbcDriverClasss());
-
-            this.jdbcUrl = line.getOptionValue("url");
-            this.host = line.getOptionValue("host", DEFAULT_HOST);
-            value = line.getOptionValue("port", DEFAULT_PORT);
-            this.port = Integer.valueOf(value);
-            this.database = line.getOptionValue("database");
-
-            if((jdbcUrl == null) && (host.isEmpty() || database == null)) {
-                throw new IllegalArgumentException("Argument '-l/--url' is empty and there is not enough"
-                   + " data for construction jdbc url. Please add --host, --port and --database.");
+        Options.OptionsData currentOptionData = null;
+        for(String arg: args) {
+            if(currentOptionData == null) {
+                // read argument
+                Options.OptionsData data = options.getOption(arg);
+                if(data == null)
+                    throw new ArgumentParserException("Unknown argument '" + arg + "'");
+                optionsDeclared.add(data);
+                if(data.withArgument) currentOptionData = data;
+            } else {
+                // data read
+                currentOptionData.setValue(arg);
+                currentOptionData = null;
             }
+        }
 
-            this.user = line.getOptionValue("user");
-            this.password = line.getOptionValue("password");
-            this.tableName = line.getOptionValue("table_name", DEFAULT_TABLE_NAME);
-
-            value = line.getOptionValue("command", DEFAULT_COMMAND);
-            this.command = CommandType.valueOf(value.toUpperCase());
-
-            this.applicationPodName = line.getOptionValue("application_pod_name");
-            this.recoveryPodName = line.getOptionValue("recovery_pod_name");
-
-            value = line.getOptionValue("format", OutputFormatType.LIST_SPACE.name());
-            this.format = OutputFormatType.valueOf(value.toUpperCase());
-
-            this.isVerbose = line.hasOption("verbose");
-        } catch(Exception pe) {
-            System.err.println(pe.getMessage());
-
-            HelpFormatter formatter = new HelpFormatter();
-            PrintWriter writer = new PrintWriter(System.err, true);
-            formatter.printHelp(writer, 80, "txn-recovery-marker-jdbc: creating and storing transaction recovery markers in database",
-                    null, ARGS_OPTIONS, HelpFormatter.DEFAULT_LEFT_PAD, HelpFormatter.DEFAULT_DESC_PAD, null, true);
-            throw new ArgumentParserException(pe);
+        // check required args
+        for(Options.OptionsData optionData: options.getAllOptions()) {
+            if(optionData.isRequired && !optionsDeclared.contains(optionData)) {
+                throw new ArgumentParserException("The argument '" + optionData + "' is required");
+            }
         }
     }
 
-    public static Options getARGS_OPTIONS() {
-        return ARGS_OPTIONS;
+    String getOptionValue(String name) {
+        for(Options.OptionsData option: optionsDeclared) {
+            if(option.getLongName().equals(name) || option.getShortName().equals(name)) {
+                return option.getValue();
+            }
+        }
+        return null;
     }
 
-    public DatabaseType getTypeDb() {
-        return typeDb;
+    String getOptionValue(String name, String defaultValue) {
+        String value = getOptionValue(name);
+        if (value == null) return defaultValue;
+        return value;
     }
 
-    public String getHibernateDialect() {
-        return hibernateDialect;
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public String getDatabase() {
-        return database;
-    }
-
-    public String getUser() {
-        return user;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getTableName() {
-        return tableName;
-    }
-
-    public Integer getPort() {
-        return port;
-    }
-
-    public CommandType getCommand() {
-        return command;
-    }
-
-    public String getApplicationPodName() {
-        return applicationPodName;
-    }
-
-    public String getRecoveryPodName() {
-        return recoveryPodName;
-    }
-
-    public OutputFormatType getFormat() {
-        return format;
-    }
-
-    public boolean isVerbose() {
-        return isVerbose;
-    }
-
-    public String getJdbcDriverClass() {
-        return jdbcDriverClass;
-    }
-
-    public String getJdbcUrl() {
-        if(jdbcUrl != null) return jdbcUrl;
-        return MessageFormat.format(typeDb.jdbcUrlPattern(), host, port.intValue(), database);
+    boolean hasOption(String name) {
+        for(Options.OptionsData option: optionsDeclared) {
+            if(option.getLongName().equals(name) || option.getShortName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

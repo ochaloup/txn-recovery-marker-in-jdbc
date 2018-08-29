@@ -32,4 +32,8 @@ public class ArgumentParserException extends Exception {
     public ArgumentParserException(Exception cause) {
         super(cause);
     }
+
+    public ArgumentParserException(String message) {
+        super(message);
+    }
 }

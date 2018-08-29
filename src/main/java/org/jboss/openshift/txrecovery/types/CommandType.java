@@ -20,10 +20,12 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.openshift.txrecovery.cliargs;
+package org.jboss.openshift.txrecovery.types;
 
-public enum OutputFormatType {
-    RAW,
-    LIST_SPACE,
-    LIST_COMMA
+public enum CommandType {
+    CREATE,
+    INSERT,
+    DELETE,
+    SELECT_RECOVERY,
+    SELECT_APPLICATION
 }
