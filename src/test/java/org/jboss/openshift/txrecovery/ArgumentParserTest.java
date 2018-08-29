@@ -141,7 +141,7 @@ public class ArgumentParserTest {
             "-d", "test_dbname"};
         ParsedArguments ap = ParsedArguments.parse(args);
 
-        Assert.assertEquals("my_db", ap.getDatabase());
+        Assert.assertEquals("test_dbname", ap.getDatabase());
     }
 
     @Test
