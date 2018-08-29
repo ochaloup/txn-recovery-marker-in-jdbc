@@ -23,11 +23,15 @@
 
 package org.jboss.openshift.txrecovery;
 
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataBuilder;
 import org.hibernate.boot.MetadataSources;
@@ -37,12 +41,15 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
 import org.hibernate.service.ServiceRegistry;
+import org.hibernate.tool.hbm2ddl.SchemaExport;
+import org.hibernate.tool.schema.TargetType;
 import org.jboss.openshift.txrecovery.cliargs.ArgumentParser;
 
 /**
  * Utility methods to setup hibernate standalone app.
  */
 public final class HibernateSetup {
+    private static final Logger log = Logger.getLogger(HibernateSetup.class.getName());
     private HibernateSetup() {
         // utility class
     }
@@ -143,6 +150,32 @@ public final class HibernateSetup {
         String appRecoveryPodTableName = setupProperties.getProperty(DB_TABLE_NAME_PARAM);
         if(appRecoveryPodTableName == null) appRecoveryPodTableName = ApplicationRecoveryPod.TABLE_NAME;
         return appRecoveryPodTableName;
+    }
+
+    /**
+     * Based on the provided Hibernate {@link Metadata} it runs schema export
+     * to generate database schema aka. tables.
+     *
+     * @param metadata  hibernate metadata as base for db schema generation
+     * @return  true if schema generation succeed without errors, false otherwise
+     */
+    public static boolean createTable(Metadata metadata) {
+        SchemaExport schemaExport = new SchemaExport();
+        schemaExport.createOnly( EnumSet.of( TargetType.DATABASE ), metadata);
+        log.log(Level.SEVERE, "exception: " + schemaExport.getExceptions());
+        return schemaExport.getExceptions() == null || schemaExport.getExceptions().isEmpty();
+    }
+
+    /**
+     * Closing the Hibernate resources - {@link SessionFactory}
+     * and the {@link Session}.
+     *
+     * @param sf  session factory to be closed
+     * @param s  session to be closed
+     */
+    public static void close(SessionFactory sf, Session s) {
+        if(s.isOpen()) s.close();
+        if(!sf.isClosed()) sf.close();
     }
 
     /**

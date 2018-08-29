@@ -22,12 +22,22 @@
 
 package org.jboss.openshift.txrecovery;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import javax.sql.DataSource;
 
 import org.h2.jdbcx.JdbcDataSource;
 
 public class DBH2Connector {
+    private static final Logger log = Logger.getLogger(DBH2Connector.class.getName());
+
     public static final String DB_NAME = "txn-recovery-marker-test";
+    public static final String DB_TABLE_NAME = "TEST_TABLE";
     public static final String DB_H2_CONNECTION = "jdbc:h2:mem:" + DB_NAME + ";DB_CLOSE_DELAY=-1";
 
     private DataSource ds;
@@ -38,4 +48,29 @@ public class DBH2Connector {
         this.ds = h2ds;
     }
 
+    public String selectAll() {
+        Connection conn = null;
+        try {
+            conn = this.ds.getConnection();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM " + DB_TABLE_NAME);
+
+            StringBuffer sb = new StringBuffer();
+            while (rs.next()) {
+                sb.append(rs.getString(1))
+                    .append(",")
+                    .append(rs.getString(2))
+                    .append(";");
+            }
+            return sb.toString();
+        } catch (SQLException sqle) {
+            throw new IllegalStateException("Cannot select data from ds '" + ds + "'", sqle);
+        } finally {
+            try {
+                conn.close();
+            } catch (Exception e) {
+                log.log(Level.SEVERE, "Cannot select data from ds '" + ds + "'", e);
+            }
+        }
+    }
 }

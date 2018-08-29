@@ -20,30 +20,16 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.openshift.txrecovery;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import org.junit.Test;
+package org.jboss.openshift.txrecovery.cliargs;
 
 /**
- * Checks for database connections and operations.
+ * Exception that the argument parser error happened.
  */
-public class MainTest {
-    private static final List<String> H2_ARGS = Arrays.asList(ArgumentParserTest.H2_CONNECTION_ARGS);
+public class ArgumentParserException extends Exception {
 
-    @Test
-    public void createTable() {
-        List<String> args = new ArrayList<String>(H2_ARGS);
-        args.add("-c");
-        args.add("create");
+    private static final long serialVersionUID = 1L;
 
-        Main.main(args.toArray(new String[] {}));
-        DBH2Connector h2Connector = new DBH2Connector();
-
-        // we are fine that call passes without exception
-        h2Connector.selectAll();
+    public ArgumentParserException(Exception cause) {
+        super(cause);
     }
 }

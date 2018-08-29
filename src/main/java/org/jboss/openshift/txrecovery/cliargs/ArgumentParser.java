@@ -33,14 +33,19 @@ import org.apache.commons.cli.Options;
 
 public final class ArgumentParser {
     public static final String DEFAULT_TABLE_NAME = "JDBC_RECOVERY";
+    public static final String DEFAULT_DB_TYPE = DatabaseType.POSTGRESQL.name();
+    public static final String DEFAULT_HOST = "localhost";
+    public static final String DEFAULT_PORT = "5432"; // PostgreSQL
+    public static final String DEFAULT_COMMAND = CommandType.SELECT_RECOVERY.name();
 
     private static Options ARGS_OPTIONS = new Options()
         .addOption("y", "type_db", true, "Database type the script will be working with")
         .addOption("i", "hibernate_dialect", true, "Hibernate dialect to be used")
         .addOption("j", "jdbc_driver_class", true, "fully classified JDBC Driver class")
+        .addOption("l", "url", true,"JDBC url which has precedence over configured host/port/database information")
         .addOption("o","host", true, "Hostname where the database runs")
         .addOption("p","port", true, "Port where the database runs")
-        .addRequiredOption("d","database", true, "Databese name to connect to at the host and port")
+        .addOption("d","database", true, "Databese name to connect to at the host and port")
         .addRequiredOption("u","user", true, "Username at the database to connect to")
         .addRequiredOption("s","password", true, "Password for the username at the database to connect to")
         .addOption("t","table_name", true, "Table name to be working with")
@@ -58,13 +63,15 @@ public final class ArgumentParser {
      *
      * @param args  cli arguments
      * @return parser with getters containing the parsed values
+     * @throws ArgumentParserException  error happens during error parsing
      */
-    public static ArgumentParser parse(String... args) {
+    public static ArgumentParser parse(String... args) throws ArgumentParserException {
         return new ArgumentParser(args);
     }
 
     private DatabaseType typeDb;
     private String hibernateDialect, jdbcDriverClass;
+    private String jdbcUrl;
     private String host, database, user, password, tableName;
     private Integer port;
     private CommandType command;
@@ -72,26 +79,33 @@ public final class ArgumentParser {
     private OutputFormatType format;
     private boolean isVerbose;
 
-    private ArgumentParser(String... args) {
+    private ArgumentParser(String... args) throws ArgumentParserException {
         CommandLineParser parser = new DefaultParser();
 
         try {
             CommandLine line = parser.parse(ARGS_OPTIONS, args);
 
-            String value = line.getOptionValue("type_db", DatabaseType.POSTGRESQL.name());
+            String value = line.getOptionValue("type_db", DEFAULT_DB_TYPE);
             this.typeDb = DatabaseType.valueOf(value.toUpperCase());
             this.hibernateDialect = line.getOptionValue("hibernate_dialect", typeDb.dialect());
             this.jdbcDriverClass = line.getOptionValue("jdbc_driver_class", typeDb.jdbcDriverClasss());
 
-            this.host = line.getOptionValue("host", "localhost");
-            value = line.getOptionValue("port", "5432");
+            this.jdbcUrl = line.getOptionValue("url");
+            this.host = line.getOptionValue("host", DEFAULT_HOST);
+            value = line.getOptionValue("port", DEFAULT_PORT);
             this.port = Integer.valueOf(value);
             this.database = line.getOptionValue("database");
+
+            if((jdbcUrl == null) && (host.isEmpty() || database == null)) {
+                throw new IllegalArgumentException("Argument '-l/--url' is empty and there is not enough"
+                   + " data for construction jdbc url. Please add --host, --port and --database.");
+            }
+
             this.user = line.getOptionValue("user");
             this.password = line.getOptionValue("password");
             this.tableName = line.getOptionValue("table_name", DEFAULT_TABLE_NAME);
 
-            value = line.getOptionValue("command", CommandType.SELECT_RECOVERY.name());
+            value = line.getOptionValue("command", DEFAULT_COMMAND);
             this.command = CommandType.valueOf(value.toUpperCase());
 
             this.applicationPodName = line.getOptionValue("application_pod_name");
@@ -108,7 +122,7 @@ public final class ArgumentParser {
             PrintWriter writer = new PrintWriter(System.err, true);
             formatter.printHelp(writer, 80, "txn-recovery-marker-jdbc: creating and storing transaction recovery markers in database",
                     null, ARGS_OPTIONS, HelpFormatter.DEFAULT_LEFT_PAD, HelpFormatter.DEFAULT_DESC_PAD, null, true);
-            System.exit(1);
+            throw new ArgumentParserException(pe);
         }
     }
 
@@ -173,6 +187,7 @@ public final class ArgumentParser {
     }
 
     public String getJdbcUrl() {
+        if(jdbcUrl != null) return jdbcUrl;
         return MessageFormat.format(typeDb.jdbcUrlPattern(), host, port.intValue(), database);
     }
 }
