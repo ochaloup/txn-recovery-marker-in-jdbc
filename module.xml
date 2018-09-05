@@ -6,7 +6,7 @@
     </resources>
     <dependencies>
         <module name="org.hibernate"/>
-        <module name="org.postgresql"/>
-        <module name="com.mysql"/>
+        <module name="org.postgresql" optional="true"/>
+        <module name="com.mysql" optional="true"/>
     </dependencies>
 </module>

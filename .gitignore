@@ -6,3 +6,6 @@ target/
 .settings/
 .checkstyle
 
+# not commit temporary directories
+jdbc/
+
