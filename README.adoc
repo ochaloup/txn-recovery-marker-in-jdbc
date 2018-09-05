@@ -1,31 +1,86 @@
 = Hibernate standalone app to save a simple marker data to the database table
 
-Hibernate standalone test application using Hibernate api to generate database schema
-and then persist and query records.
-
-WARNING: *TODO* not up-to-date. Need changes!
+Command line application which saves simple data to database.
+It uses Hibernate API to generate database schema and for persistng and querying records.
 
 == How to run
 
+The application is expected to be started as modular application
+under https://jboss-modules.github.io/jboss-modules/manual/#introduction[jboss modules].
+
+The application requires `org.hibernate` module and then module with jdbc driver (see `module.xml`).
+The optionally required jdbc drivers modules are defined in the `module.xml`. Currently application requires at least one of
+
+* `org.postgresql`
+* `com.mysql`
+
+It's expected to be run as from modules of the WildFly application server where the jdbc driver modules are installed.
+For starting you need to provide module path (parameter `-mp`) from where the `jboss-modules.jar` loads jars to classloader.
+
+Let's say you have created `org.postgresql` module under `$JBOSS_HOME/modules` and you create module of this application
+under `io.narayana.openshift`.
+
+```bash
+export JBOSS_HOME=<path/to/unzipped/wfly/app/server>
+# java -jar $JBOSS_HOME/jboss-modules.jar -mp $JBOSS_HOME/modules/ io.narayana.openshift-recovery -o <db_host> -p <db_port> -d <db_name> -u <db_user> -s <db_password> -t <table_name_for_storing> -c <command> -a <app_pod_name> -r <recovery_pod_name>
+java -jar $JBOSS_HOME/jboss-modules.jar -mp $JBOSS_HOME/modules/ io.narayana.openshift-recovery -o localhost -p 5432 -d test -u test -s test -t txndata -c insert -a appname -r recname
+```
+
+NOTE: for debugging enhance `java` command with `-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y`
+
+== Application arguments for starting
+
+The application works as command line tool that could be used for savind data to database.
+This is the list of the options the application provides at command line.
+
+```
+txn-recovery-marker-jdbc: creating and storing transaction recovery markers in database. Available command line arguments are:
+-y/--type_db : Database type the script will be working with
+-i/--hibernate_dialect : Hibernate dialect to be used
+-j/--jdbc_driver_class : fully classified JDBC Driver class
+-l/--url : JDBC url which has precedence over configured host/port/database information
+-o/--host : Hostname where the database runs
+-p/--port : Port where the database runs
+-d/--database : Database name to connect to at the host and port
+-u/--user : Username at the database to connect to
+-s/--password : Password for the username at the database to connect to
+-t/--table_name : Table name to be working with
+-c/--command : Command to run in database available options are to create db schemato insert a record to delete the record and list recovery pod names
+-a/--application_pod_name : Application pod name which will be either inserted/deleted onto database or by which query will be filtered
+-r/--recovery_pod_name : Recovery pod name which will be either inserted/deleted onto database or by which query will be filtered
+-f/--format : Output format
+-v/--verbose : Enable verbose logging
+-h/--help : Printing this help
+```
+
+== How to manually create jdbc module under `JBOSS_NOME/modules` directory
+
+Manual way to create jdbc driver module.
+
+. download jdbc driver (e.g. for PostgreSQL from https://jdbc.postgresql.org/download.html).
+. create directory `$JBOSS_HOME/modules/org/postgresql/main`
+. copy the jdbc driver jar under the created directory with name `postgresql-jdbc.jar`
+. create file `module.xml` under the created directory. The content of the file will be
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.0" name="org.postgresql">
+  <resources>
+    <resource-root path="postgresql-jdbc.jar"/>
+  </resources>
+  <dependencies>
+    <module name="javax.api"/>
+    <module name="javax.transaction.api"/>
+  </dependencies>
+</module>
+```
+
 == Getting run a database
 
-Download jdbc driver (e.g. for PostgreSQL, see https://jdbc.postgresql.org/download.html) and run the database itself.
-The easiest way is probably with Docker
+Test database could be started on local machine with help of Docker.
+The database we used for testing is PostgreSQL.
 
 ```bash
-docker run -p 5432:5432 --rm  -ePOSTGRES_USER=test -e POSTGRES_PASSWORD=test postgres:9.4 -c max-prepared-transactions=110 -c log-statement=all
+docker run -p 5432:5432 --rm  -ePOSTGRES_USER=test -ePOSTGRES_PASSWORD=test postgres:9.4 -c max-prepared-transactions=110 -c log-statement=all
 ```
 
-== Run the app
-
-If your database is running at different machine than at `localhost:5432` or with different credentials than `test/test`
-then consider to make changes in `setup.properties` file.
-
-
-```bash
-mvn clean package
-java -Dproperties.file=./setup.properties -cp target/txn-recovery-marker-jdbc-1.0-SNAPSHOT-jar-with-dependencies.jar:<path>/postgresql-42.2.2.jar org.jboss.openshift.txrecovery.Main create nameapp namerecovery
-java -Dproperties.file=./setup.properties -cp target/txn-recovery-marker-jdbc-1.0-SNAPSHOT-jar-with-dependencies.jar:<path>/postgresql-42.2.2.jar org.jboss.openshift.txrecovery.Main get_all_recovery
-```
-NOTE: for debugging enhance `java` command with `-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y`
-java -jar /home/ochaloup/jboss/wildfly/dist/target/wildfly-14.0.0.CR1-SNAPSHOT/jboss-modules.jar -mp /home/ochaloup/jboss/wildfly/dist/target/wildfly-14.0.0.CR1-SNAPSHOT/modules/ io.narayana.openshift-recovery -o localhost -p 5432 -d test -u test -s test -t myone -c insert -a ahoj -r franta
