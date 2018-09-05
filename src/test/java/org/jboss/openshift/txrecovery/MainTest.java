@@ -69,8 +69,8 @@ public class MainTest {
 
         String out = h2Connector.selectAll();
         log.info("Selected data is: '" + out + "'");
-        Assert.assertTrue("Expecting the -a value was added to database", out.contains("good"));
-        Assert.assertTrue("Expecting the -r value was added to database", out.contains("bad"));
+        Assert.assertTrue("Expecting the value of parameter '-a' which was 'good' was added to database", out.contains("good"));
+        Assert.assertTrue("Expecting the value of parameter '-r' whic was 'bad' was added to database", out.contains("bad"));
         Assert.assertEquals("Expecting only one row was added into the database", 1, out.split(";").length);
     }
 
