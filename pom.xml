@@ -13,7 +13,7 @@
         <maven.compiler.target>1.6</maven.compiler.target>
 
         <version.h2>1.4.195</version.h2>
-        <version.hibernate>5.3.6.Final</version.hibernate>
+        <version.hibernate>5.1.10.Final</version.hibernate>
         <version.junit>4.12</version.junit>
         <version.zt.exec>1.10</version.zt.exec>
     </properties>
