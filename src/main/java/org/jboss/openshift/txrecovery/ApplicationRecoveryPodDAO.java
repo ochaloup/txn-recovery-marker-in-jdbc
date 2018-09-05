@@ -57,8 +57,7 @@ public class ApplicationRecoveryPodDAO {
      */
     public boolean saveRecord(String applicationPodName, String recoveryPodName) {
         session.getTransaction().begin();
-        ApplicationRecoveryPod record = new ApplicationRecoveryPod(
-                applicationPodName, recoveryPodName);
+        ApplicationRecoveryPod record = new ApplicationRecoveryPod(applicationPodName, recoveryPodName);
         try {
             session.persist(record);
             session.getTransaction().commit();
@@ -82,14 +81,17 @@ public class ApplicationRecoveryPodDAO {
         }
 
         // creating hql delete query
+        session.getTransaction().begin();
         Query q = session.createQuery("delete from " + ApplicationRecoveryPod.class.getSimpleName() + whereClause);
-
         if(applicationPodName != null && !applicationPodName.isEmpty())
             q.setString("appPod", applicationPodName);
         if(recoveryPodName != null && !recoveryPodName.isEmpty())
             q.setString("recPod", recoveryPodName);
 
-        return q.executeUpdate();
+        int numberDeletedRecords = q.executeUpdate();
+        session.getTransaction().commit();
+
+        return numberDeletedRecords;
     }
 
     /**
