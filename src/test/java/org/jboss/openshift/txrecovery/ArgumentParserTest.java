@@ -79,6 +79,36 @@ public class ArgumentParserTest {
     }
 
     @Test
+    public void openshiftOptions() throws Exception {
+        String[] args = new String[] {
+                "-y", "postgresql",
+                "-o", "172.30.109.102",
+                "-p", "5432",
+                "-d", "root",
+                "-u", "userBqL",
+                "-s", "Fcvkt5n4",
+                "-t", "recmark_eapapp",
+                "-c", "delete",
+                "-a", "eap-app-1-lzxnf",
+                "-r", "eap-app-migration-1-gxfn6"};
+        ParsedArguments ap = ParsedArguments.parse(args);
+
+        Assert.assertEquals(DatabaseType.POSTGRESQL, ap.getTypeDb());
+        Assert.assertEquals("org.hibernate.dialect.PostgreSQL94Dialect", ap.getHibernateDialect());
+        Assert.assertEquals("org.postgresql.Driver", ap.getJdbcDriverClass());
+        Assert.assertEquals("jdbc:postgresql://172.30.109.102:5432/root", ap.getJdbcUrl());
+        Assert.assertEquals("172.30.109.102", ap.getHost());
+        Assert.assertEquals((Integer) 5432, ap.getPort());
+        Assert.assertEquals("root", ap.getDatabase());
+        Assert.assertEquals("userBqL", ap.getUser());
+        Assert.assertEquals("Fcvkt5n4", ap.getPassword());
+        Assert.assertEquals("recmark_eapapp", ap.getTableName());
+        Assert.assertEquals(CommandType.DELETE, ap.getCommand());
+        Assert.assertEquals("eap-app-1-lzxnf", ap.getApplicationPodName());
+        Assert.assertEquals("eap-app-migration-1-gxfn6", ap.getRecoveryPodName());
+    }
+
+    @Test
     public void allLongOptions() throws Exception {
         String[] args = new String[] {
             "--type_db", "h2",
