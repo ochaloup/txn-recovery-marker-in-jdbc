@@ -84,7 +84,7 @@ public class MainTest {
         Assert.assertEquals("Expecting one row was added into the database", 1, out.split(";").length);
 
         String[] argsDelete = enrichArray(ArgumentParserTest.H2_CONNECTION_ARGS,
-                "-c", "delete", "-a", "goodone");
+                "-c", "delete", "-a", "goodone", "-r", "badone");
         Main.main(argsDelete);
 
         out = h2Connector.selectAll();

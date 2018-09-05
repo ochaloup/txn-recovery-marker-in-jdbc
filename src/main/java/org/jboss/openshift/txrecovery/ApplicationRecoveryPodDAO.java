@@ -76,7 +76,7 @@ public class ApplicationRecoveryPodDAO {
             whereClause += " where id.applicationPodName = :appPod";
         }
         if(recoveryPodName != null && !recoveryPodName.isEmpty()) {
-            whereClause = whereClause.isEmpty() ? " where " : " and ";
+            whereClause += whereClause.isEmpty() ? " where " : " and ";
             whereClause += "id.recoveryPodName = :recPod";
         }
         String query = "delete from " + ApplicationRecoveryPod.class.getSimpleName() + whereClause;
