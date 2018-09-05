@@ -54,7 +54,6 @@ public final class HibernateSetup {
         // utility class
     }
 
-    public static final String PROPERTIES_FILE_PARAM = "properties.file";
     public static final String DB_TABLE_NAME_PARAM = "db.table.name";
     public static final String HIBERNATE_DIALECT_PARAM = "hibernate.dialect";
     public static final String HIBERNATE_CONNECTION_DRIVER_CLASS_PARAM = "hibernate.connection.driver_class";
